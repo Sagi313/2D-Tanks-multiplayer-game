@@ -1,6 +1,8 @@
 import pygame as pg
 import math
 import random
+import ctypes
+
 
 
 def calculate_new_xy(old_xy,speed,current_angle):    # Gets the old pos and gives the new
@@ -101,24 +103,32 @@ class land_mine(pg.sprite.Sprite):  # A bomb that stays in the tank's pos and wa
         pg.sprite.Sprite.__init__(self)
         self.start_time = pg.time.get_ticks()   # The time when you drop the mine
         self.land_mine_img= pg.image.load("landminePic.png")
-        self.explosion_img = pg.image.load("boomPic.png")
+        self.explosion_img=[]
+        for i in range (1,6):
+            self.explosion_img.append(pg.image.load("images/explosion/boom%d.png" %i))
         self.image = self.land_mine_img
         self.rect = self.image.get_rect()
         self.rect.center = (start_xy)
+        self.frames_index=0
 
     def update(self):   
         self.current_time = pg.time.get_ticks()
-        if (self.current_time- self.start_time > 1800): # After 1800 ticks the image will change. The enemys will die
-            self.image = self.explosion_img
-        if (self.current_time- self.start_time > 5000): # Deletes the object
-            self.kill()
+        self.since_shot= self.current_time- self.start_time
+        if (self.since_shot > 2000): # After 2000 ticks the image will change. The enemys will die
+            if (self.frames_index>4): # Deletes the object
+                self.kill()
+                return
+            self.image = self.explosion_img[self.frames_index]
+            self.frames_index+=1
 
 
+user32 = ctypes.windll.user32
 
 clock = pg.time.Clock() # Setting the clock
 
-win_height, win_length = 400, 800       # Window size parameters
-screen = pg.display.set_mode((win_length, win_height))      # Creating a window
+win_height, win_length = user32.GetSystemMetrics(0),user32.GetSystemMetrics(1)     # Window size parameters
+screen = pg.display.set_mode(( win_height,win_length),pg.FULLSCREEN)      # Creating a window
+
 pg.display.set_caption("Tanks", "Spine Runtime")  # Set window caption
 pg.display.set_icon(pg.image.load("tankico.ico"))  # Set window icon image
 
@@ -137,6 +147,9 @@ while running:  # Main loop
     event = pg.event.poll()
     if event.type == pg.QUIT:  # Exit question
         running=False
+    elif event.type == pg.KEYDOWN:
+        if event.key == pg.K_ESCAPE:
+            running = False  # Set running to False to end the while loop.
 
     screen.fill((255,255,255))
 
