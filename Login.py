@@ -1,35 +1,73 @@
 from tkinter import *
 import mysql.connector
 
-mydb= mysql.connector.connect(host='localhost',
-                              user='root',
-                              passwd='root',
-                              database= 'testing_Data_Base',
-                              ) # Connecting into MySQL DB
+mydb= mysql.connector.connect(
+            user="root", 
+            password='root', 
+            host="localhost", 
+            port=3306, 
+            database='Game',
+            ssl_disabled=True,
+                              ) # Connecting into MySQL DB that sits on an Azure cloud service
+
+def changing_screens(register_screen):
+    if register_screen:
+        sign_in_button.grid_forget()
+        register_button.grid_forget()
+
+        text_email.grid(row=3,column=0)
+        entry_email.grid(row=3,column=1)
+        text_age.grid(row=4,column=0)
+        entry_age.grid(row=4,column=1)
+        submit_button.grid(row=5,column=0)
+
+    else:
+        text_email.grid_forget()
+        entry_email.grid_forget()
+        text_age.grid_forget()
+        entry_age.grid_forget()
+        submit_button.grid_forget()
+
+        sign_in_button.grid(row=3,column=0)
+        register_button.grid(row=4,column=0)
+
+
+def submit_button_func():
+    sql_command = "INSERT INTO user_info (user_name ,password, email, age) VALUES (%s,%s,%s,%s)"
+    info_query = (entry_username.get(), entry_password.get(), entry_email.get() , entry_age.get())
+    my_cursor.execute(sql_command,info_query)
+
+    sql_command2 = "INSERT INTO user_stats (user_id, speed, rotating_turret, shooting_power,exp) VALUES (%s,%s,%s,%s,%s)"
+    info_query2 = (my_cursor.lastrowid, 1, 1, 1, 0)   # Setting the staring defualt values for this new user. A player starts from zero. His user_id is linked to the other table
+    
+    my_cursor.execute(sql_command2,info_query2)
+    mydb.commit()
+    
+    changing_screens(0)
+    text_log_result.config(text = "You have registered succsesfully")
 
 def sign_in_button_func(event): # Checks the data the user has entered
-    my_cursor.execute("SELECT * FROM users_info WHERE name= '%s' and email='%s'" %(entry_username.get(), entry_password.get())) # Checks if the entered password and user matches the databse
     
     if entry_password.get() =="" or entry_username.get()=="":
         text_log_result.config(text= "Please enter username and password")
         return
-
+    
+    my_cursor.execute("SELECT * FROM user_info WHERE user_name= '%s' and password='%s'" %(entry_username.get(), entry_password.get())) # Checks if the entered password and user matches the databse
     users=list(my_cursor.fetchall())    # Passes the returned tuple into a list
     
     if len(users) > 0:  # Checks if there is a user that fits the arguments
         top.destroy() 
         root.destroy() 
-        import PythonTest # Calls the game file
+        import Garage # Calls the game file
     else:
         text_log_result.config(text= "Incorrect username or password")
 
 
 def register_button_func():
-    sql_command = "INSERT INTO users_info (name, email, age) VALUES (%s,%s,%s)"
-    record1 = (entry_username.get(), entry_password.get(), 25)
-    my_cursor.execute(sql_command,record1)
-    mydb.commit()
-    text_log_result.config(text= "You have registered succsesfully")
+
+    changing_screens(1)
+
+    
 
 
 def cancel_button_func(): # A func that is exiting the program with the 'cancel' button
@@ -39,50 +77,68 @@ def cancel_button_func(): # A func that is exiting the program with the 'cancel'
 
 
 log_result=""
-root= Tk()
+root= Tk( )
 top= Toplevel() 
 
-my_cursor=mydb.cursor() # Init the cursor
+my_cursor = mydb.cursor() # Init the cursor
 
 w, h = root.winfo_screenwidth(), root.winfo_screenheight()
-top.overrideredirect(1) # removes the uppper window tool bar
+w,h = 1100, 600
+top.overrideredirect(0) # removes/sets the uppper window tool bar
 top.geometry("%dx%d+0+0" % (w, h))   # Setting the size of the login screen
 
 top.title('Login screen') # Setting the window title
 top.iconbitmap('tankico.ico')   # Setting the window tank icon
 
-top.configure(background='white')
-photo2=PhotoImage(file='TankAnimation.png') # Gets the image for the main logo
+logo_photos_img=PhotoImage(file='images/mainlogo.png') # Gets the image for the main logo
 
-#canvas = Canvas(root, width = 300, height = 300)      
-#canvas.pack()      
-##img = PhotoImage(file="TankPic")      
-#canvas.create_image(20,20, anchor=NW, image=photo2)   
+background_image2=PhotoImage(file='images/login/grass menu background.png')   # Sets the background image
+background_label2 = Label(top, image=background_image2)
+background_label2.place(x=0, y=0, relwidth=1, relheight=1)
 
-photo=Label(top,image=photo2,bg='white',width=460,anchor = 'nw')
+background_image=PhotoImage(file='images/background.png')   # Sets the background image
+background_label = Label(top, image=background_image)
+background_label.place(x=w/2-833/2, y=h/2-434/2)    # Places the black square background in the center. needs to be changed to a formula withour the actual pixels of the photo
+
+photo=Label(top,image=logo_photos_img,anchor = 'nw')
 text_username=Label(top,text='Username: ',font={'Arial,14'})
 entry_username=Entry(top) # The typing box
 text_password=Label(top,text='Password: ',font={'Arial,14'})
 entry_password=Entry(top,show="*")
 text_log_result=Label(top,text=log_result,font={'Arial,14'})
 
+text_email=Label(top,text='Email: ',font={'Arial,14'})
+entry_email=Entry(top) # The typing box
+text_age=Label(top,text='Age: ',font={'Arial,14'})
+entry_age=Entry(top)
 
-cancel_button=Button(top,text='Exit',command=lambda:cancel_button_func()) # A button to exit the program
-register_button=Button(top,text='Register',command=lambda:register_button_func()) # A button to register
-sign_in_button=Button(top,text='Sign In',command=lambda:sign_in_button_func('<Return>')) # A button to Sign in
+exit_button_img=PhotoImage(file='images/login/exit_button.png')
+exit_button=Button(top,image=exit_button_img,command=lambda:cancel_button_func()) # A button to exit the program
+
+register_button_img=PhotoImage(file='images/login/register_button.png')
+register_button=Button(top, image = register_button_img, command=lambda:register_button_func()) # A button to register
+
+sign_in_button_img=PhotoImage(file='images/login/login_button.png')
+sign_in_button=Button(top,image=sign_in_button_img,command=lambda:sign_in_button_func('<Return>')) # A button to Sign in
+
+submit_button_img=PhotoImage(file='images/login/submit_button.png')
+submit_button=Button(top,image=submit_button_img,command=lambda:submit_button_func()) # A button to Sign in
 
 entry_password.bind('<Return>',sign_in_button_func) 
 
-# Orginaze all the elements inside thw window
-photo.pack()
-text_username.pack()
-entry_username.pack()
-text_password.pack()
-entry_password.pack()
-sign_in_button.pack()
-register_button.pack()
-text_log_result.pack()
-cancel_button.pack()
+# Orginaze all the elements inside the window
+photo.grid(row=0,column=0,pady=50, padx=400, sticky=W+E,columnspan=2)
+text_username.grid(row=1,column=0)
+entry_username.grid(row=1,column=1)
+text_password.grid(row=2,column=0)
+entry_password.grid(row=2,column=1)
+sign_in_button.grid(row=3,column=0)
+register_button.grid(row=4,column=0)
+text_log_result.grid(row=5,column=0)
+
+
+exit_button.grid(row=6,column=0)
+
 
 root.withdraw()
 root.mainloop()

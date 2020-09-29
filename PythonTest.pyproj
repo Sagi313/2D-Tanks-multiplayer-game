@@ -4,13 +4,14 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>f4531d96-6ea6-49b1-abc9-394c3d1fe90a</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>Login.py</StartupFile>
+    <StartupFile>Garage.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>PythonTest</Name>
     <RootNamespace>PythonTest</RootNamespace>
+    <TestFramework>Pytest</TestFramework>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -33,7 +34,10 @@
     <Compile Include="Client.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="PythonTest.py" />
+    <Compile Include="TestingFile.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Game.py" />
     <Compile Include="Server.py">
       <SubType>Code</SubType>
     </Compile>
