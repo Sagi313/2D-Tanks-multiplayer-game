@@ -1,11 +1,8 @@
 import pygame as pg
 import math
 import random
-import ctypes
 from Network import network
 from Player import *
-
-
 
 
 def calculate_new_xy(old_xy,speed,current_angle):    # Gets the old pos and gives the new
@@ -23,20 +20,24 @@ def rot_center(image, rect, angle): # Rotating the image of the player and etc. 
 class tank():
     def __init__(self,start_xy):
         self.tank_img = pg.image.load("images/tank/movement/ACS_move._01.png")
-        self.turret_img = pg.image.load("images/tank/ACS_Tower.png")
+        self.turret_img = pg.image.load("images/tank/ACS_Tower_temp.png")
         
         self.img_top = self.turret_img
         self.img = self.tank_img
         self.turret_rect = self.turret_img.get_rect()
         self.rect = self.img.get_rect()
         self.rect.center = (start_xy) # Object starting place
-        self.turret_rect.center = (self.rect.center)
+        self.turret_rect.center = (self.rect.center)    # Useless. just for the calc func
 
         self.angle = 0
         self.speed = 4
         self.rotation_speed = 2
         self.turret_speed = 2
         self.turret_angle = 0
+
+
+
+        self.my_bullet = None   # Defualt. No bullets were shot by the player
 
     def movement(self): # Takes the key from the arrows and moves the object
         key=pg.key.get_pressed()
@@ -67,68 +68,102 @@ class tank():
         self.img, self.rect = rot_center(self.tank_img, self.rect, self.angle) # Updates the photo to the new angle and sets the new center of the rect
         self.img_top, self.turret_rect = rot_center(self.turret_img, self.turret_rect, self.turret_angle)
 
+        #####
+        self.screen_centered_tank = (int(screen_length / 2- self.rect[2]/2) ,int(screen_height / 2 -self.rect[3]/2))    # This is the pos for the tank to be in the center of the camera. This is defined here to prevent re-calc any frame
+        self.screen_centered_turret =  (int(screen_length / 2 -self.turret_rect[2]/2),int(screen_height / 2 -self.turret_rect[3]/2))
+        #####
+
+    def shooting(self):
+        key=pg.key.get_pressed()
+        if key[pg.K_SPACE]:
+            data_to_send.a_bullet = (self.rect.center, self.turret_angle) # Adds the new bullet data to the server connection so it will drawn on the other players screen
+            self.my_bullet = bullet(self.rect.center, self.turret_angle)    # Creates a bullet object to be shown in this player's screen
+
+
     def draw(self, screen_to_draw):
-        screen_to_draw.blit(self.img, (int(screen_length / 2),int(screen_height / 2)))  # Makes sure that the player will always be centered
-        screen_to_draw.blit(self.img_top, (int(screen_length / 2),int(screen_height / 2)))
+        
+        if (self.my_bullet != None):  # If a player has an active bullet
+            self.my_bullet.draw(screen_to_draw)
+        
+        print(self.rect)            
+        print(self.turret_rect)
+        screen_to_draw.blit(self.img, self.screen_centered_tank)  # Makes sure that the player will always be centered
+        screen_to_draw.blit(self.img_top, self.screen_centered_turret)
 
-class money_bar(pg.sprite.Sprite):
+class menu_bars():
     def __init__(self):
-        pg.sprite.Sprite.__init__(self)
-        self.image=pg.image.load("images/ingameelements/Money Panel HUD.png")
-        self.rect = self.image.get_rect()
-        self.rect.topleft=(30,0) # Object starting place
-        self.myfont = pg.font.SysFont('Comic Sans MS', 15)
-    
-    def update(self):   # Changes the text to the right amount of money to blit on the bar
-        textsurface = self.myfont.render(str(99), False, (255, 255, 255)) 
-        screen.blit(textsurface, tuple(map(sum, zip(self.rect.topleft, (30,4)))))  # Displays the current money (exp atm) of the player. The "tuple(map(sum, zip(z, b))))" is meant to sum 2 tuples, so the pos of the text will fit the bar
 
-class health_bar(pg.sprite.Sprite):
-    def __init__(self):
-        pg.sprite.Sprite.__init__(self)
-        self.image=pg.image.load("images/ingameelements/healthbar.png")
-        self.rect = self.image.get_rect()
-        self.rect.topleft=(30,550) # Object starting place
         self.myfont = pg.font.SysFont('Comic Sans MS', 15)
-    
-    def update(self):   # Changes the text to the right amount of money to blit on the bar
-        textsurface = self.myfont.render(str(99), False, (255, 255, 255))
-        screen.blit(textsurface, tuple(map(sum, zip(self.rect.topleft, (38,25)))))  # Displays the health of the player
 
-class bullet(pg.sprite.Sprite):
+        self.money_bar_img=pg.image.load("images/ingameelements/Money Panel HUD.png")
+        self.money_bar_pos= (30,0)
+        self.money_bar_text = self.myfont.render(str(99), False, (255, 255, 255)) 
+
+        self.health_bar_img = pg.image.load("images/ingameelements/healthbar.png")
+        self.health_bar_text = self.myfont.render(str(99), False, (255, 255, 255)) 
+        self.health_bar_pos= (30,550)
+    
+    def draw(self, screen_to_draw):   # Changes the text to the right amount of money to blit on the bar
+        screen_to_draw.blit(self.money_bar_img, self.money_bar_pos)
+        screen_to_draw.blit(self.money_bar_text, (50,5))  # Displays the health of the player
+
+        screen_to_draw.blit(self.health_bar_img, self.health_bar_pos)
+        screen_to_draw.blit(self.health_bar_text, (38+30,25+550))  # Displays the health of the player
+
+class bullet():
     def __init__(self,start_xy,shooting_angle):
-        pg.sprite.Sprite.__init__(self)
-        self.image = pg.image.load("images/tankshot/ACS Fire1.png")
+        self.bullet_animation_imgs = [pg.image.load("images/tankshot/ACS Fire1.png"), pg.image.load("images/tankshot/ACS Fire2.png"), pg.image.load("images/tankshot/ACS Fire3.png")]
+        self.image = self.bullet_animation_imgs[0]   # Needs to be changed into animation
         self.rect = self.image.get_rect()
-        self.image,self.rect = rot_center(self.image,self.rect,self.angle+180) # Updates the photo to the new angle and sets the new center of the rect
-        self.rect.center= (start_xy) # Object starting place
         self.angle = shooting_angle
+        self.rect.center= (start_xy) # Object starting place
+        self.bullet_speed=6
+        self.image,self.rect = rot_center(self.image,self.rect,self.angle + 180) # Updates the photo to the new angle and sets the new center of the rect
 
-class enemy(pg.sprite.Sprite):
-    def __init__(self,start_xy):
-        pg.sprite.Sprite.__init__(self)
-        self.image = pg.image.load("images/tank/movement/ACS_move._01.png")
+    
+    def draw(self, screen_to_draw):
+        self.rect.center = calculate_new_xy (self.rect.center, self.bullet_speed, self.angle)   # Moves the bullet
+        screen_to_draw.blit(self.image, (self.rect.center[0] - camera.offset[0], self.rect.center[1] - camera.offset[1]))  # Makes sure that the player will always be centered
+
+class enemy():
+    def __init__(self, tank_recieved_obj):
+        self.tank_img = pg.image.load("images/tank/movement/ACS_move._01.png")
+        self.turret_img = pg.image.load("images/tank/ACS_Tower.png")
         self.rect = self.image.get_rect()
         self.rect.center = (start_xy) # Object starting place
-        self.angle = 0
+        self.turret_rect.center = (self.rect.center)    # Useless. just for the calc func
+
+        self.angle = tank_recieved_obj.angle
+        self.turret_angle = tank_recieved_obj.turret_angle
+
+    def shoot(self):
+        self.my_bullet = bullet(self.rect.center, self.turret_angle)    # Creates a bullet object to be shown in this player's screen
+
+
+    def draw(self, screen_to_draw):
+        self.img, self.rect = rot_center(self.tank_img, self.rect, self.angle) # Updates the photo to the new angle and sets the new center of the rect
+        self.img_top, self.turret_rect = rot_center(self.turret_img, self.turret_rect, self.turret_angle)
+
+        screen_to_draw.blit(self.img, (self.rect.center[0] - camera.offset[0] , self.rect.center[1] - camera.offset[1]))  # Makes sure that the player will always be centered
+        screen_to_draw.blit(self.img_top, (self.turret_rect.center[0] - camera.offset[0] , self.turret_rect.center[1] - camera.offset[1]))
 
 class cameraClass():
-    def __init__(self):
-        self.offset = pg.Rect(600,1100,0,0)
+    def __init__(self,start_pos):
+        self.offset = [start_pos[0] - int(screen_length / 2),start_pos[1] - int(screen_height / 2)] # This is a list and not a tuple, because it needs to be changed
 
     def update(self, centered_object_to_follow):
-        if centered_object_to_follow[0] < screen_length/2:
-            self.offset[2] = centered_object_to_follow[0]
+        if centered_object_to_follow[0] > screen_length/2:
+            self.offset[0] = centered_object_to_follow[0] - int(screen_length / 2)
 
-        if centered_object_to_follow[1] < screen_height/2:
-            self.offset[3] = centered_object_to_follow[1]
+        if centered_object_to_follow[1] > screen_height/2:
+            self.offset[1] = centered_object_to_follow[1] - int(screen_height / 2)
   
 
 pg.init()   # Resets pygame libary
 clock = pg.time.Clock() # Setting the clock
 
 screen_height, screen_length =  600, 1100  # Those variables get used in the other moudles
-screen = pg.display.set_mode(( screen_length,screen_height))      # Creating a window
+screen = pg.display.set_mode(( screen_length, screen_height))      # Creating a window
 
 pg.display.set_caption("Tanks", "Spine Runtime")  # Set window caption
 pg.display.set_icon(pg.image.load("images/tankico.ico"))  # Set window icon image
@@ -139,16 +174,13 @@ n = network()
 data_to_send = n.getP()
 received_data = n.send(data_to_send)    # First connection made, gives back the stats data to be set
 print(received_data)
-bullets_group=pg.sprite.Group() # The tank's bullets that got fired
 
-player = tank((200,200))   # Creating an object from the tank class and adding it to the tank sprite group. It gets the starting point from the server
+player = tank((1000,600))   # Creating an object from the tank class and adding it to the tank sprite group. It gets the starting point from the server
 
 ###########
-bars_and_panels=pg.sprite.Group()
-bars_and_panels.add(money_bar())
-bars_and_panels.add(health_bar())
+menu_bars_obj = menu_bars()
+camera = cameraClass(player.rect.center)
 ###########
-camera = cameraClass()
 
 tank_img = pg.image.load("images/tank/movement/ACS_move._01.png")   # Used to test drawing images with blit
 tank_rect = tank_img.get_rect()
@@ -164,7 +196,7 @@ while running:  # Main loop
             running = False  # Set running to False to end the while loop.
     
 
-    screen.blit(background,(0 - camera.offset[2] ,0 - camera.offset[3]))
+    screen.blit(background,(0 - camera.offset[0] ,0 - camera.offset[1]))
 
     camera.update(player.rect.center)
 
@@ -176,20 +208,20 @@ while running:  # Main loop
     received_data = n.send(data_to_send)    # Sends the data while receiving new data
 
     for an_enemy in received_data:  # Creates new sprites of enemy according to the recieved list
+
         tank_img_rotated, tank_rect = rot_center(tank_img,tank_img.get_rect(center=(an_enemy.tank_x,an_enemy.tank_y)),an_enemy.tank_angle)
-        screen.blit(tank_img_rotated,(tank_rect[0] - camera.offset[2] ,tank_rect[1] - camera.offset[3]))   # Draws enemys on the screen, by the recieved data
-
-
-    bullets_group.update()  # Moves the bullets that got shot
+        screen.blit(tank_img_rotated,(tank_rect[0] - camera.offset[0] ,tank_rect[1] - camera.offset[1]))   # Draws enemys on the screen, by the recieved data
+        if an_enemy.a_bullet != None:
+            enemy_bullet = bullet((an_enemy.tank_x,an_enemy.tank_y), an_enemy.turret_angle)
+            enemy_bullet.draw(screen)
 
     player.movement()
 
-    bullets_group.draw(screen)  # Draws the sprites of both groups on the screen of the game
+    player.shooting()
     player.draw(screen)
 
     #############
-    bars_and_panels.draw(screen)
-    bars_and_panels.update()
+    menu_bars_obj.draw(screen)
     #############
     pg.display.update()
     clock.tick(30)      # 60 FPS timer

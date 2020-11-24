@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>2e2d5f78-c1fd-43b3-9593-477d38f4b513</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>Server.py</StartupFile>
+    <StartupFile>Login.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -25,6 +25,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Client.py" />
+    <Compile Include="Login.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Network.py">
       <SubType>Code</SubType>
     </Compile>
