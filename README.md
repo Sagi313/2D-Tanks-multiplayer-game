@@ -8,7 +8,7 @@ A preview for the next version-
 Libraries used:
 - Pygame
 - Pickle
-- Socet
+- Sockets
 - Threading
 
 This is a current project I am working on right now.
