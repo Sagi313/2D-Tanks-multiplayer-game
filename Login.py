@@ -1,142 +1,58 @@
 from tkinter import *
-import mysql.connector
+from Player import *
 
-mydb= mysql.connector.connect(
-            user="root", 
-            password='root', 
-            host="localhost", 
-            port=3306, 
-            database='Game',
-            ssl_disabled=True,
-                              ) # Connecting into MySQL DB that sits on an Azure cloud service
-
-def changing_screens(register_screen):
-    if register_screen:
-        sign_in_button.grid_forget()
-        register_button.grid_forget()
-
-        text_email.grid(row=3,column=0)
-        entry_email.grid(row=3,column=1)
-        text_age.grid(row=4,column=0)
-        entry_age.grid(row=4,column=1)
-        submit_button.grid(row=5,column=0)
-
-    else:
-        text_email.grid_forget()
-        entry_email.grid_forget()
-        text_age.grid_forget()
-        entry_age.grid_forget()
-        submit_button.grid_forget()
-
-        sign_in_button.grid(row=3,column=0)
-        register_button.grid(row=4,column=0)
-
-
-def submit_button_func():
-    sql_command = "INSERT INTO user_info (user_name ,password, email, age) VALUES (%s,%s,%s,%s)"
-    info_query = (entry_username.get(), entry_password.get(), entry_email.get() , entry_age.get())
-    my_cursor.execute(sql_command,info_query)
-
-    sql_command2 = "INSERT INTO user_stats (user_id, speed, rotating_turret, shooting_power,exp) VALUES (%s,%s,%s,%s,%s)"
-    info_query2 = (my_cursor.lastrowid, 1, 1, 1, 0)   # Setting the staring defualt values for this new user. A player starts from zero. His user_id is linked to the other table
-    
-    my_cursor.execute(sql_command2,info_query2)
-    mydb.commit()
-    
-    changing_screens(0)
-    text_log_result.config(text = "You have registered succsesfully")
-
-def sign_in_button_func(event): # Checks the data the user has entered
-    
+def sign_in_button_func(event):
     if entry_password.get() =="" or entry_username.get()=="":
-        text_log_result.config(text= "Please enter username and password")
+        static_canvas.itemconfigure(text_log_result,text= "Please enter username and password")
         return
-    
-    my_cursor.execute("SELECT * FROM user_info WHERE user_name= '%s' and password='%s'" %(entry_username.get(), entry_password.get())) # Checks if the entered password and user matches the databse
-    users=list(my_cursor.fetchall())    # Passes the returned tuple into a list
-    
-    if len(users) > 0:  # Checks if there is a user that fits the arguments
-        top.destroy() 
-        root.destroy() 
-        import Garage # Calls the game file
     else:
-        text_log_result.config(text= "Incorrect username or password")
-
+        my_data = static_data()
+        my_data.username = entry_username.get()
+        my_data.password = entry_password.get()
+        return my_data
+        
 
 def register_button_func():
+    pass
 
-    changing_screens(1)
+def submit_button_func():
+    pass
 
+def log_in_screen():
+    screen.mainloop()
 
-def cancel_button_func(): # A func that is exiting the program with the 'cancel' button
-    top.destroy()
-    root.destroy()
-    sys.exit(0)
+screen_height, screen_length =  600, 1100  # Those variables get used in the other moudles
+screen= Tk( )
+screen.geometry("%dx%d+0+0" % (screen_length, screen_height))   # Setting the size of the login screen
 
+static_canvas = Canvas (screen, width = screen_length, height = screen_height) # All static objects. images backgrounds and etc.
 
-log_result=""
-root= Tk( )
-top= Toplevel() 
-
-my_cursor = mydb.cursor() # Init the cursor
-
-w, h = root.winfo_screenwidth(), root.winfo_screenheight()
-w,h = 1100, 600
-top.overrideredirect(0) # removes/sets the uppper window tool bar
-top.geometry("%dx%d+0+0" % (w, h))   # Setting the size of the login screen
-
-top.title('Login screen') # Setting the window title
-top.iconbitmap('tankico.ico')   # Setting the window tank icon
-
-logo_photos_img=PhotoImage(file='images/mainlogo.png') # Gets the image for the main logo
-
-background_image2=PhotoImage(file='images/login/grass menu background.png')   # Sets the background image
-background_label2 = Label(top, image=background_image2)
-background_label2.place(x=0, y=0, relwidth=1, relheight=1)
-
-background_image=PhotoImage(file='images/background.png')   # Sets the background image
-background_label = Label(top, image=background_image)
-background_label.place(x=w/2-833/2, y=h/2-434/2)    # Places the black square background in the center. needs to be changed to a formula withour the actual pixels of the photo
-
-photo=Label(top,image=logo_photos_img,anchor = 'nw')
-text_username=Label(top,text='Username: ',font={'Arial,14'})
-entry_username=Entry(top) # The typing box
-text_password=Label(top,text='Password: ',font={'Arial,14'})
-entry_password=Entry(top,show="*")
-text_log_result=Label(top,text=log_result,font={'Arial,14'})
-
-text_email=Label(top,text='Email: ',font={'Arial,14'})
-entry_email=Entry(top) # The typing box
-text_age=Label(top,text='Age: ',font={'Arial,14'})
-entry_age=Entry(top)
-
-exit_button_img=PhotoImage(file='images/login/exit_button.png')
-exit_button=Button(top,image=exit_button_img,command=lambda:cancel_button_func()) # A button to exit the program
-
-register_button_img=PhotoImage(file='images/login/register_button.png')
-register_button=Button(top, image = register_button_img, command=lambda:register_button_func()) # A button to register
-
+### Image Importing ###
+main_logo_img=PhotoImage(file='images/mainlogo.png')
 sign_in_button_img=PhotoImage(file='images/login/login_button.png')
-sign_in_button=Button(top,image=sign_in_button_img,command=lambda:sign_in_button_func('<Return>')) # A button to Sign in
-
 submit_button_img=PhotoImage(file='images/login/submit_button.png')
-submit_button=Button(top,image=submit_button_img,command=lambda:submit_button_func()) # A button to Sign in
+register_button_img=PhotoImage(file='images/login/register_button.png')
+exit_button_img=PhotoImage(file='images/login/exit_button.png')
+black_square_img =PhotoImage(file='images/background.png')   # Sets the background image
+background_img=PhotoImage(file='images/login/grass menu background.png')   # Sets the background image
+#######################
 
-entry_password.bind('<Return>',sign_in_button_func) 
+background = static_canvas.create_image((0,0),anchor = "nw", image = background_img)    # Grass background
+black_square = static_canvas.create_image((screen_length/2,310), image = black_square_img)  # The black square in the center. everything is ontop of this
+main_logo = static_canvas.create_image((screen_length/2,50) ,image = main_logo_img)
 
-# Orginaze all the elements inside the window
-photo.grid(row=0,column=0,pady=50, padx=400, sticky=W+E,columnspan=2)
-text_username.grid(row=1,column=0)
-entry_username.grid(row=1,column=1)
-text_password.grid(row=2,column=0)
-entry_password.grid(row=2,column=1)
-sign_in_button.grid(row=3,column=0)
-register_button.grid(row=4,column=0)
-text_log_result.grid(row=5,column=0)
+sign_in_button = Button(static_canvas,image=sign_in_button_img,command=lambda:sign_in_button_func('<Return>')) # A button to Sign in
+button1_window = static_canvas.create_window(10, 10, anchor=NW, window=sign_in_button)
 
-
-exit_button.grid(row=6,column=0)
+text_username= static_canvas.create_text(300,300,text='Username: ',font={'Arial,14'}, fill = "white")   # Text on canvas with transparent bg
+text_password= static_canvas.create_text(300,350,text='Password: ',font={'Arial,14'}, fill = "white")   # Text on canvas with transparent bg
+text_log_result = static_canvas.create_text(400,450,text='None',font={'Arial,14'}, fill = "white")
 
 
-root.withdraw()
-root.mainloop()
+entry_username=Entry(static_canvas) # The typing box
+entry_password=Entry(static_canvas,show="*")
+
+static_canvas.place(x=0,y=0)
+entry_username.place(x=350,y=300)
+entry_password.place(x=350,y=350)
+
