@@ -92,9 +92,6 @@ class tank():
         screen_to_draw.blit(self.img, self.screen_centered_tank)  # Makes sure that the player will always be centered
         screen_to_draw.blit(self.img_top, self.screen_centered_turret)
 
-
-
-
 class menu_bars():
     def __init__(self):
 
@@ -133,7 +130,6 @@ class bullet():
     def draw(self, screen_to_draw):
         self.rect.center = calculate_new_xy (self.rect.center, self.bullet_speed, self.angle)   # Moves the bullet
         screen_to_draw.blit(self.image, (self.rect.center[0] - camera.offset[0], self.rect.center[1] - camera.offset[1]))  # Makes sure that the player will always be centered
-
 
 class cameraClass():
     def __init__(self,start_pos):
